@@ -1,0 +1,155 @@
+"""Configuration for the job monitor pipeline."""
+import os
+from pathlib import Path
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
+
+# Directory paths
+ROOT_DIR = Path(__file__).parent.parent
+PROFILE_PATH = ROOT_DIR / "profile.md"
+SOURCES_PATH = ROOT_DIR / "job_sources.json"
+
+# Supabase credentials
+SUPABASE_URL = os.getenv("SUPABASE_URL", "")
+SUPABASE_SERVICE_KEY = os.getenv("SUPABASE_SERVICE_KEY", "")
+
+# OpenAI API
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
+SCORING_MODEL = "gpt-5.4-nano"
+
+# Optional monitoring
+HEALTHCHECK_URL = os.getenv("HEALTHCHECK_URL", "")
+
+# Pipeline settings
+MAX_SCRAPE_WORKERS = 2  # Parallel browser instances
+ENRICH_BATCH_SIZE = 100
+SCORE_BATCH_SIZE = 100
+MIN_MATCH_SCORE = 5.0  # Minimum score (0-10) to display in results
+
+# Load profile content
+def load_profile() -> str:
+    """Load the user's profile from profile.md"""
+    if PROFILE_PATH.exists():
+        return PROFILE_PATH.read_text()
+    return ""
+
+# Title keywords to INCLUDE (case-insensitive)
+INCLUDE_KEYWORDS = [
+    "operations",
+    "ops",
+    "revenue operations",
+    "rev ops",
+    "revops",
+    "business operations",
+    "biz ops",
+    "bizops",
+    "sales operations",
+    "sales ops",
+    "head of",
+    "director",
+    "vp",
+    "chief",
+    "fractional",
+    "consulting",
+    "consultant",
+    "strategy",
+    "strategic",
+    "gtm",
+    "go-to-market",
+]
+
+# Title keywords to EXCLUDE (case-insensitive)
+EXCLUDE_KEYWORDS = [
+    "engineer",
+    "engineering",
+    "developer",
+    "software",
+    "swe",
+    "frontend",
+    "backend",
+    "fullstack",
+    "devops",
+    "sre",
+    "designer",
+    "design",
+    "ux",
+    "ui",
+    "data scientist",
+    "ml",
+    "machine learning",
+    "intern",
+    "internship",
+    "junior",
+    "entry level",
+    "associate",
+    "account executive",
+    "sdr",
+    "bdr",
+    "ae",
+]
+
+# US location signals (include jobs with these)
+US_LOCATION_SIGNALS = [
+    "remote",
+    "united states",
+    "usa",
+    "us",
+    "new york",
+    "san francisco",
+    "los angeles",
+    "chicago",
+    "boston",
+    "seattle",
+    "austin",
+    "denver",
+    "miami",
+    "atlanta",
+    "portland",
+    "philadelphia",
+    "phoenix",
+    "dallas",
+    "houston",
+    "san diego",
+    "remote - us",
+    "remote (us)",
+    "remote, us",
+    "anywhere in us",
+    "canada",
+    "vancouver",
+    "toronto",
+    "remote - canada",
+    "remote (canada)",
+    "north america",
+]
+
+# Non-US location signals (exclude unless paired with US/Canada signal)
+NON_US_SIGNALS = [
+    "uk",
+    "united kingdom",
+    "london",
+    "europe",
+    "emea",
+    "apac",
+    "asia",
+    "india",
+    "bangalore",
+    "mumbai",
+    "australia",
+    "sydney",
+    "melbourne",
+    "germany",
+    "berlin",
+    "france",
+    "paris",
+    "spain",
+    "madrid",
+    "brazil",
+    "mexico",
+    "latam",
+    "singapore",
+    "hong kong",
+    "japan",
+    "tokyo",
+]

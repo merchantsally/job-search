@@ -1,0 +1,362 @@
+{
+  "filters": {
+    "title_keywords": [
+      "customer",
+      "support",
+      "success",
+      "cx",
+      "service",
+      "operations"
+    ]
+  },
+  "sources": [
+    {
+      "name": "Anthropic",
+      "url": "https://job-boards.greenhouse.io/anthropic",
+      "type": "greenhouse",
+      "enabled": true
+    },
+    {
+      "name": "OpenAI",
+      "url": "https://jobs.ashbyhq.com/openai",
+      "type": "ashby",
+      "enabled": true
+    },
+    {
+      "name": "Stripe",
+      "url": "https://boards.greenhouse.io/stripe",
+      "type": "greenhouse",
+      "enabled": true
+    },
+    {
+      "name": "Notion",
+      "url": "https://jobs.ashbyhq.com/notion",
+      "type": "ashby",
+      "enabled": true
+    },
+    {
+      "name": "Figma",
+      "url": "https://job-boards.greenhouse.io/figma",
+      "type": "greenhouse",
+      "enabled": true
+    },
+    {
+      "name": "Linear",
+      "url": "https://jobs.ashbyhq.com/linear",
+      "type": "ashby",
+      "enabled": true
+    },
+    {
+      "name": "Vercel",
+      "url": "https://job-boards.greenhouse.io/vercel",
+      "type": "greenhouse",
+      "enabled": true
+    },
+    {
+      "name": "Ramp",
+      "url": "https://jobs.ashbyhq.com/ramp",
+      "type": "ashby",
+      "enabled": true
+    },
+    {
+      "name": "Mercury",
+      "url": "https://jobs.ashbyhq.com/mercury",
+      "type": "ashby",
+      "enabled": true
+    },
+    {
+      "name": "Retool",
+      "url": "https://jobs.ashbyhq.com/retool",
+      "type": "ashby",
+      "enabled": true
+    },
+    {
+      "name": "Rippling",
+      "url": "https://www.rippling.com/careers/open-roles",
+      "type": "career_page",
+      "enabled": false,
+      "note": "Uses custom Rippling ATS - needs dedicated scraper"
+    },
+    {
+      "name": "Plaid",
+      "url": "https://jobs.lever.co/plaid",
+      "type": "lever",
+      "enabled": true
+    },
+    {
+      "name": "Coinbase",
+      "url": "https://job-boards.greenhouse.io/coinbase",
+      "type": "greenhouse",
+      "enabled": true
+    },
+    {
+      "name": "Airbnb",
+      "url": "https://job-boards.greenhouse.io/airbnb",
+      "type": "greenhouse",
+      "enabled": true
+    },
+    {
+      "name": "Discord",
+      "url": "https://job-boards.greenhouse.io/discord",
+      "type": "greenhouse",
+      "enabled": true
+    },
+    {
+      "name": "Datadog",
+      "url": "https://job-boards.greenhouse.io/datadog",
+      "type": "greenhouse",
+      "enabled": true
+    },
+    {
+      "name": "HashiCorp",
+      "url": "https://www.hashicorp.com/en/careers/open-positions",
+      "type": "career_page",
+      "enabled": false,
+      "note": "Now part of IBM - uses custom careers page"
+    },
+    {
+      "name": "Cloudflare",
+      "url": "https://job-boards.greenhouse.io/cloudflare",
+      "type": "greenhouse",
+      "enabled": true
+    },
+    {
+      "name": "Deel",
+      "url": "https://jobs.ashbyhq.com/deel",
+      "type": "ashby",
+      "enabled": true
+    },
+    {
+      "name": "Brex",
+      "url": "https://job-boards.greenhouse.io/brex",
+      "type": "greenhouse",
+      "enabled": true
+    },
+    {
+      "name": "Scale AI",
+      "url": "https://job-boards.greenhouse.io/scaleai",
+      "type": "greenhouse",
+      "enabled": true
+    },
+    {
+      "name": "Airtable",
+      "url": "https://job-boards.greenhouse.io/airtable",
+      "type": "greenhouse",
+      "enabled": true
+    },
+    {
+      "name": "Zapier",
+      "url": "https://jobs.lever.co/zapier",
+      "type": "lever",
+      "enabled": false,
+      "_note": "Lever page returns 404 - Zapier moved to custom careers page"
+    },
+    {
+      "name": "GitLab",
+      "url": "https://job-boards.greenhouse.io/gitlab",
+      "type": "greenhouse",
+      "enabled": true
+    },
+    {
+      "name": "Webflow",
+      "url": "https://job-boards.greenhouse.io/webflow",
+      "type": "greenhouse",
+      "enabled": true
+    },
+    {
+      "name": "Gusto",
+      "url": "https://job-boards.greenhouse.io/gusto",
+      "type": "greenhouse",
+      "enabled": true
+    },
+    {
+      "name": "Work at a Startup (YC)",
+      "url": "https://www.workatastartup.com/jobs",
+      "type": "workatastartup",
+      "enabled": true
+    },
+    {
+      "name": "Railway",
+      "url": "https://jobs.ashbyhq.com/railway",
+      "type": "ashby",
+      "enabled": true
+    },
+    {
+      "name": "Supabase",
+      "url": "https://jobs.ashbyhq.com/supabase",
+      "type": "ashby",
+      "enabled": true
+    },
+    {
+      "name": "PostHog",
+      "url": "https://jobs.ashbyhq.com/posthog",
+      "type": "ashby",
+      "enabled": true
+    },
+
+    {"_comment": "=== TopStartups.io ==="},
+    {
+      "name": "TopStartups.io Jobs",
+      "url": "https://topstartups.io/jobs/",
+      "type": "topstartups",
+      "enabled": true
+    },
+
+    {"_comment": "=== Consider-Powered VC Job Boards ==="},
+    {
+      "name": "A16Z Portfolio",
+      "url": "https://portfoliojobs.a16z.com",
+      "type": "consider",
+      "enabled": true
+    },
+    {
+      "name": "Sequoia Portfolio",
+      "url": "https://jobs.sequoiacap.com",
+      "type": "consider",
+      "enabled": true
+    },
+    {
+      "name": "Bessemer Portfolio",
+      "url": "https://jobs.bvp.com",
+      "type": "consider",
+      "enabled": true
+    },
+    {
+      "name": "Lightspeed Portfolio",
+      "url": "https://jobs.lsvp.com",
+      "type": "consider",
+      "enabled": true
+    },
+    {
+      "name": "Greylock Portfolio",
+      "url": "https://jobs.greylock.com",
+      "type": "consider",
+      "enabled": true
+    },
+    {
+      "name": "Kleiner Perkins Portfolio",
+      "url": "https://jobs.kleinerperkins.com",
+      "type": "consider",
+      "enabled": true
+    },
+    {
+      "name": "Battery Ventures Portfolio",
+      "url": "https://jobs.battery.com",
+      "type": "consider",
+      "enabled": true
+    },
+    {
+      "name": "GV Portfolio",
+      "url": "https://jobs.gv.com",
+      "type": "consider",
+      "enabled": true
+    },
+    {
+      "name": "IVP Portfolio",
+      "url": "https://careers.ivp.com",
+      "type": "consider",
+      "enabled": true
+    },
+    {
+      "name": "NEA Portfolio",
+      "url": "https://careers.nea.com",
+      "type": "consider",
+      "enabled": true
+    },
+    {
+      "name": "First Round Portfolio",
+      "url": "https://jobs.firstround.com",
+      "type": "consider",
+      "enabled": true
+    },
+    {
+      "name": "Bain Capital Ventures Portfolio",
+      "url": "https://jobs.baincapitalventures.com",
+      "type": "consider",
+      "enabled": true
+    },
+
+    {"_comment": "=== Getro-Powered VC Job Boards ==="},
+    {
+      "name": "Accel Portfolio",
+      "url": "https://jobs.accel.com",
+      "type": "getro",
+      "enabled": true
+    },
+    {
+      "name": "General Catalyst Portfolio",
+      "url": "https://jobs.generalcatalyst.com",
+      "type": "getro",
+      "enabled": true
+    },
+    {
+      "name": "Index Ventures Portfolio",
+      "url": "https://indexventures.getro.com",
+      "type": "getro",
+      "enabled": true
+    },
+    {
+      "name": "Khosla Ventures Portfolio",
+      "url": "https://jobs.khoslaventures.com",
+      "type": "getro",
+      "enabled": true
+    },
+    {
+      "name": "Insight Partners Portfolio",
+      "url": "https://jobs.insightpartners.com",
+      "type": "getro",
+      "enabled": true
+    },
+    {
+      "name": "Thrive Capital Portfolio",
+      "url": "https://jobs.thrivecap.com",
+      "type": "getro",
+      "enabled": true
+    },
+    {
+      "name": "8VC Portfolio",
+      "url": "https://jobs.8vc.com",
+      "type": "getro",
+      "enabled": true
+    },
+    {
+      "name": "Coatue Portfolio",
+      "url": "https://jobs.coatue.com",
+      "type": "getro",
+      "enabled": false,
+      "_note": "Board returns 403/not-found - may be blocking scrapers"
+    },
+    {
+      "name": "Redpoint Portfolio",
+      "url": "https://careers.redpoint.com",
+      "type": "getro",
+      "enabled": true
+    },
+    {
+      "name": "Norwest Portfolio",
+      "url": "https://careers.nvp.com",
+      "type": "getro",
+      "enabled": true
+    },
+    {
+      "name": "Menlo Ventures Portfolio",
+      "url": "https://jobs.menlovc.com",
+      "type": "getro",
+      "enabled": true
+    },
+    {
+      "name": "Emergence Capital Portfolio",
+      "url": "https://talent.emcap.com",
+      "type": "getro",
+      "enabled": true
+    },
+
+    {"_comment": "=== Fractional Job Boards ==="},
+    {
+      "name": "Fractional Jobs",
+      "url": "https://www.fractionaljobs.io/#jobs",
+      "type": "fractionaljobs",
+      "enabled": true
+    }
+  ]
+}
