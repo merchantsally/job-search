@@ -4,6 +4,12 @@ from playwright.sync_api import Browser
 
 # Location selectors (ordered by specificity)
 _LOCATION_SELECTORS = [
+    # Workday-specific selectors
+    "[data-automation-id='locations']",
+    "[data-automation-id='location']",
+    "[data-automation-id='jobPostingLocation']",
+    "[class*='css-cygeeu']",  # Workday location class
+    # Generic selectors
     "[class*='location']",
     "[class*='Location']",
     "[data-testid*='location']",
