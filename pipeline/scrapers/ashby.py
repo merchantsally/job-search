@@ -129,7 +129,7 @@ def scrape(browser: Browser, source: dict) -> list[dict]:
             "company": name,
             "location": location,
             "url": job_url,
-            "source": "ashby",
+            "source": name,
             "date_posted": (job.get("publishedAt") or "")[:10] or None,
             "department": job.get("department", ""),
             "salary_min": salary_min,

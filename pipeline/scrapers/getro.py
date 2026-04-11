@@ -247,7 +247,7 @@ def scrape(browser: Browser, source: dict) -> list[dict]:
                     "company": company,
                     "location": location,
                     "url": href,
-                    "source": "getro",
+                    "source": name,
                     "date_posted": date_posted,
                 })
 
@@ -294,7 +294,7 @@ def scrape(browser: Browser, source: dict) -> list[dict]:
                         "company": company,
                         "location": "",
                         "url": href,
-                        "source": "getro",
+                        "source": name,
                         "date_posted": None,
                     })
                 except Exception:

@@ -157,7 +157,7 @@ def scrape(browser: Browser, source: dict) -> list[dict]:
                     "company": company,
                     "location": location,
                     "url": href,
-                    "source": "consider",
+                    "source": name,
                     "date_posted": None,
                 })
 

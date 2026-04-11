@@ -46,7 +46,7 @@ def scrape(browser: Browser, source: dict) -> list[dict]:
                     "company": name,
                     "location": location,
                     "url": href,
-                    "source": "lever",
+                    "source": name,
                 })
             except Exception:
                 continue
