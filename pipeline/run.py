@@ -200,13 +200,13 @@ def phase2_filter(supabase) -> int:
 
 
 def phase3_enrich(supabase, browser) -> int:
-    """Phase 3: Enrich relevant jobs with full descriptions."""
+    """Phase 3: Enrich relevant jobs with full descriptions and locations."""
     print("\n=== Phase 3: Enriching ===")
 
-    # Get relevant jobs without descriptions
+    # Get relevant jobs without descriptions (also fetch location to fill gaps)
     result = (
         supabase.table("jobs")
-        .select("id, url, description")
+        .select("id, url, description, location")
         .eq("relevant", True)
         .is_("enriched_at", "null")
         .limit(config.ENRICH_BATCH_SIZE)
@@ -225,17 +225,21 @@ def phase3_enrich(supabase, browser) -> int:
             enriched_count += 1
             continue
 
-        # Fetch description from URL
-        description = fetch_description(browser, job["url"])
+        # Fetch description and location from URL
+        enrichment = fetch_description(browser, job["url"])
 
-        supabase.table("jobs").update(
-            {
-                "description": description,
-                "enriched_at": datetime.utcnow().isoformat(),
-            }
-        ).eq("id", job["id"]).execute()
+        update_data = {
+            "description": enrichment.get("description", ""),
+            "enriched_at": datetime.utcnow().isoformat(),
+        }
 
-        if description:
+        # Fill in location if missing
+        if not job.get("location") and enrichment.get("location"):
+            update_data["location"] = enrichment["location"]
+
+        supabase.table("jobs").update(update_data).eq("id", job["id"]).execute()
+
+        if enrichment.get("description"):
             enriched_count += 1
             print(f"    Enriched: {job['url'][:60]}...")
 

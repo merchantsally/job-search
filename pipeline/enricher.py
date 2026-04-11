@@ -2,6 +2,15 @@
 from playwright.sync_api import Browser
 
 
+# Location selectors (ordered by specificity)
+_LOCATION_SELECTORS = [
+    "[class*='location']",
+    "[class*='Location']",
+    "[data-testid*='location']",
+    "[class*='job-location']",
+    "[class*='jobLocation']",
+]
+
 # Elements to remove before extracting text
 _STRIP_SELECTORS = "script, style, nav, header, footer, noscript, svg, img"
 
@@ -24,16 +33,27 @@ _CONTENT_SELECTORS = [
 ]
 
 
-def fetch_description(browser: Browser, url: str) -> str:
+def fetch_description(browser: Browser, url: str) -> dict:
     """
-    Navigate to a job URL, extract visible text, return cleaned description.
-    Returns empty string if the page fails or content is too short to be useful.
+    Navigate to a job URL, extract description and location.
+    Returns dict with "description" and "location" keys.
     """
     page = browser.new_page()
+    result = {"description": "", "location": ""}
     try:
         page.goto(url, timeout=30000)
         page.wait_for_load_state("domcontentloaded", timeout=15000)
         page.wait_for_timeout(1500)  # Wait for dynamic content
+
+        # Extract location before removing elements
+        for selector in _LOCATION_SELECTORS:
+            el = page.query_selector(selector)
+            if el:
+                loc_text = el.inner_text().strip()
+                # Clean up location - take first line, limit length
+                if loc_text and len(loc_text) < 100:
+                    result["location"] = loc_text.split("\n")[0].strip()
+                    break
 
         # Remove noise elements
         page.evaluate(f"""
@@ -50,11 +70,12 @@ def fetch_description(browser: Browser, url: str) -> str:
                     text = candidate
                     break
 
-        return _clean(text)
+        result["description"] = _clean(text)
+        return result
 
     except Exception as e:
         print(f"    Enricher error for {url}: {e}")
-        return ""
+        return result
     finally:
         page.close()
 
