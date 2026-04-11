@@ -4,6 +4,7 @@ import json
 import urllib.request
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
+from urllib.parse import urlparse, urlunparse
 
 from playwright.sync_api import sync_playwright
 from supabase import create_client
@@ -28,9 +29,16 @@ def _ping(status: str = "") -> None:
         pass
 
 
+def _strip_query_params(url: str) -> str:
+    """Strip query parameters from URL for deduplication."""
+    parsed = urlparse(url)
+    return urlunparse((parsed.scheme, parsed.netloc, parsed.path, "", "", ""))
+
+
 def _url_hash(url: str) -> str:
-    """Generate a hash of a URL for deduplication."""
-    return hashlib.sha256(url.encode()).hexdigest()[:32]
+    """Generate a hash of a URL for deduplication (ignores query params)."""
+    clean_url = _strip_query_params(url)
+    return hashlib.sha256(clean_url.encode()).hexdigest()[:32]
 
 
 def _load_sources() -> list[dict]:
@@ -117,20 +125,23 @@ def phase1_scrape(supabase, browser) -> int:
                 except Exception as e:
                     print(f"  Error inserting seen_jobs batch: {e}")
 
-        # Insert job records (deduplicated by URL)
+        # Insert job records (deduplicated by URL without query params)
         seen_urls = set()
         job_records = []
         for j in all_new_jobs:
             url = j.get("url", "")
-            if not url or url in seen_urls:
+            if not url:
                 continue
-            seen_urls.add(url)
+            clean_url = _strip_query_params(url)
+            if clean_url in seen_urls:
+                continue
+            seen_urls.add(clean_url)
 
             record = {
                 "title": j.get("title", ""),
                 "company": j.get("company", ""),
                 "location": j.get("location", ""),
-                "url": url,
+                "url": clean_url,
                 "source": j.get("source", ""),
                 "date_posted": j.get("date_posted"),
                 "department": j.get("department", ""),
