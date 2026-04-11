@@ -10,6 +10,178 @@
     ]
   },
   "sources": [
+    {"_comment": "=== VC PORTFOLIOS FIRST (to capture smaller companies) ==="},
+
+    {"_comment": "=== Consider-Powered VC Job Boards ==="},
+    {
+      "name": "A16Z Portfolio",
+      "url": "https://portfoliojobs.a16z.com",
+      "type": "consider",
+      "enabled": true
+    },
+    {
+      "name": "Sequoia Portfolio",
+      "url": "https://jobs.sequoiacap.com",
+      "type": "consider",
+      "enabled": true
+    },
+    {
+      "name": "Bessemer Portfolio",
+      "url": "https://jobs.bvp.com",
+      "type": "consider",
+      "enabled": true
+    },
+    {
+      "name": "Lightspeed Portfolio",
+      "url": "https://jobs.lsvp.com",
+      "type": "consider",
+      "enabled": true
+    },
+    {
+      "name": "Greylock Portfolio",
+      "url": "https://jobs.greylock.com",
+      "type": "consider",
+      "enabled": true
+    },
+    {
+      "name": "Kleiner Perkins Portfolio",
+      "url": "https://jobs.kleinerperkins.com",
+      "type": "consider",
+      "enabled": true
+    },
+    {
+      "name": "Battery Ventures Portfolio",
+      "url": "https://jobs.battery.com",
+      "type": "consider",
+      "enabled": true
+    },
+    {
+      "name": "GV Portfolio",
+      "url": "https://jobs.gv.com",
+      "type": "consider",
+      "enabled": true
+    },
+    {
+      "name": "IVP Portfolio",
+      "url": "https://careers.ivp.com",
+      "type": "consider",
+      "enabled": true
+    },
+    {
+      "name": "NEA Portfolio",
+      "url": "https://careers.nea.com",
+      "type": "consider",
+      "enabled": true
+    },
+    {
+      "name": "First Round Portfolio",
+      "url": "https://jobs.firstround.com",
+      "type": "consider",
+      "enabled": true
+    },
+    {
+      "name": "Bain Capital Ventures Portfolio",
+      "url": "https://jobs.baincapitalventures.com",
+      "type": "consider",
+      "enabled": true
+    },
+
+    {"_comment": "=== Getro-Powered VC Job Boards ==="},
+    {
+      "name": "Accel Portfolio",
+      "url": "https://jobs.accel.com",
+      "type": "getro",
+      "enabled": true
+    },
+    {
+      "name": "General Catalyst Portfolio",
+      "url": "https://jobs.generalcatalyst.com",
+      "type": "getro",
+      "enabled": true
+    },
+    {
+      "name": "Index Ventures Portfolio",
+      "url": "https://indexventures.getro.com",
+      "type": "getro",
+      "enabled": true
+    },
+    {
+      "name": "Khosla Ventures Portfolio",
+      "url": "https://jobs.khoslaventures.com",
+      "type": "getro",
+      "enabled": true
+    },
+    {
+      "name": "Insight Partners Portfolio",
+      "url": "https://jobs.insightpartners.com",
+      "type": "getro",
+      "enabled": true
+    },
+    {
+      "name": "Thrive Capital Portfolio",
+      "url": "https://jobs.thrivecap.com",
+      "type": "getro",
+      "enabled": true
+    },
+    {
+      "name": "8VC Portfolio",
+      "url": "https://jobs.8vc.com",
+      "type": "getro",
+      "enabled": true
+    },
+    {
+      "name": "Coatue Portfolio",
+      "url": "https://jobs.coatue.com",
+      "type": "getro",
+      "enabled": false,
+      "_note": "Board returns 403/not-found - may be blocking scrapers"
+    },
+    {
+      "name": "Redpoint Portfolio",
+      "url": "https://careers.redpoint.com",
+      "type": "getro",
+      "enabled": true
+    },
+    {
+      "name": "Norwest Portfolio",
+      "url": "https://careers.nvp.com",
+      "type": "getro",
+      "enabled": true
+    },
+    {
+      "name": "Menlo Ventures Portfolio",
+      "url": "https://jobs.menlovc.com",
+      "type": "getro",
+      "enabled": true
+    },
+    {
+      "name": "Emergence Capital Portfolio",
+      "url": "https://talent.emcap.com",
+      "type": "getro",
+      "enabled": true
+    },
+
+    {"_comment": "=== AGGREGATORS (catch more smaller companies) ==="},
+    {
+      "name": "TopStartups.io Jobs",
+      "url": "https://topstartups.io/jobs/",
+      "type": "topstartups",
+      "enabled": true
+    },
+    {
+      "name": "Work at a Startup (YC)",
+      "url": "https://www.workatastartup.com/jobs",
+      "type": "workatastartup",
+      "enabled": true
+    },
+    {
+      "name": "Fractional Jobs",
+      "url": "https://www.fractionaljobs.io/#jobs",
+      "type": "fractionaljobs",
+      "enabled": true
+    },
+
+    {"_comment": "=== DIRECT COMPANIES (scraped last, dedupe against VC) ==="},
     {
       "name": "Anthropic",
       "url": "https://job-boards.greenhouse.io/anthropic",
@@ -170,12 +342,6 @@
       "enabled": true
     },
     {
-      "name": "Work at a Startup (YC)",
-      "url": "https://www.workatastartup.com/jobs",
-      "type": "workatastartup",
-      "enabled": true
-    },
-    {
       "name": "Railway",
       "url": "https://jobs.ashbyhq.com/railway",
       "type": "ashby",
@@ -191,171 +357,6 @@
       "name": "PostHog",
       "url": "https://jobs.ashbyhq.com/posthog",
       "type": "ashby",
-      "enabled": true
-    },
-
-    {"_comment": "=== TopStartups.io ==="},
-    {
-      "name": "TopStartups.io Jobs",
-      "url": "https://topstartups.io/jobs/",
-      "type": "topstartups",
-      "enabled": true
-    },
-
-    {"_comment": "=== Consider-Powered VC Job Boards ==="},
-    {
-      "name": "A16Z Portfolio",
-      "url": "https://portfoliojobs.a16z.com",
-      "type": "consider",
-      "enabled": true
-    },
-    {
-      "name": "Sequoia Portfolio",
-      "url": "https://jobs.sequoiacap.com",
-      "type": "consider",
-      "enabled": true
-    },
-    {
-      "name": "Bessemer Portfolio",
-      "url": "https://jobs.bvp.com",
-      "type": "consider",
-      "enabled": true
-    },
-    {
-      "name": "Lightspeed Portfolio",
-      "url": "https://jobs.lsvp.com",
-      "type": "consider",
-      "enabled": true
-    },
-    {
-      "name": "Greylock Portfolio",
-      "url": "https://jobs.greylock.com",
-      "type": "consider",
-      "enabled": true
-    },
-    {
-      "name": "Kleiner Perkins Portfolio",
-      "url": "https://jobs.kleinerperkins.com",
-      "type": "consider",
-      "enabled": true
-    },
-    {
-      "name": "Battery Ventures Portfolio",
-      "url": "https://jobs.battery.com",
-      "type": "consider",
-      "enabled": true
-    },
-    {
-      "name": "GV Portfolio",
-      "url": "https://jobs.gv.com",
-      "type": "consider",
-      "enabled": true
-    },
-    {
-      "name": "IVP Portfolio",
-      "url": "https://careers.ivp.com",
-      "type": "consider",
-      "enabled": true
-    },
-    {
-      "name": "NEA Portfolio",
-      "url": "https://careers.nea.com",
-      "type": "consider",
-      "enabled": true
-    },
-    {
-      "name": "First Round Portfolio",
-      "url": "https://jobs.firstround.com",
-      "type": "consider",
-      "enabled": true
-    },
-    {
-      "name": "Bain Capital Ventures Portfolio",
-      "url": "https://jobs.baincapitalventures.com",
-      "type": "consider",
-      "enabled": true
-    },
-
-    {"_comment": "=== Getro-Powered VC Job Boards ==="},
-    {
-      "name": "Accel Portfolio",
-      "url": "https://jobs.accel.com",
-      "type": "getro",
-      "enabled": true
-    },
-    {
-      "name": "General Catalyst Portfolio",
-      "url": "https://jobs.generalcatalyst.com",
-      "type": "getro",
-      "enabled": true
-    },
-    {
-      "name": "Index Ventures Portfolio",
-      "url": "https://indexventures.getro.com",
-      "type": "getro",
-      "enabled": true
-    },
-    {
-      "name": "Khosla Ventures Portfolio",
-      "url": "https://jobs.khoslaventures.com",
-      "type": "getro",
-      "enabled": true
-    },
-    {
-      "name": "Insight Partners Portfolio",
-      "url": "https://jobs.insightpartners.com",
-      "type": "getro",
-      "enabled": true
-    },
-    {
-      "name": "Thrive Capital Portfolio",
-      "url": "https://jobs.thrivecap.com",
-      "type": "getro",
-      "enabled": true
-    },
-    {
-      "name": "8VC Portfolio",
-      "url": "https://jobs.8vc.com",
-      "type": "getro",
-      "enabled": true
-    },
-    {
-      "name": "Coatue Portfolio",
-      "url": "https://jobs.coatue.com",
-      "type": "getro",
-      "enabled": false,
-      "_note": "Board returns 403/not-found - may be blocking scrapers"
-    },
-    {
-      "name": "Redpoint Portfolio",
-      "url": "https://careers.redpoint.com",
-      "type": "getro",
-      "enabled": true
-    },
-    {
-      "name": "Norwest Portfolio",
-      "url": "https://careers.nvp.com",
-      "type": "getro",
-      "enabled": true
-    },
-    {
-      "name": "Menlo Ventures Portfolio",
-      "url": "https://jobs.menlovc.com",
-      "type": "getro",
-      "enabled": true
-    },
-    {
-      "name": "Emergence Capital Portfolio",
-      "url": "https://talent.emcap.com",
-      "type": "getro",
-      "enabled": true
-    },
-
-    {"_comment": "=== Fractional Job Boards ==="},
-    {
-      "name": "Fractional Jobs",
-      "url": "https://www.fractionaljobs.io/#jobs",
-      "type": "fractionaljobs",
       "enabled": true
     }
   ]
