@@ -22,6 +22,7 @@ dist/
 
 # Profile (contains personal info)
 profile.md
+profiles/
 
 # OS
 .DS_Store
