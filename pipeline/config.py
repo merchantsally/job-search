@@ -24,6 +24,8 @@ MAX_SCRAPE_WORKERS = 2  # Parallel browser instances
 ENRICH_BATCH_SIZE = 100
 SCORE_BATCH_SIZE = 100
 MIN_MATCH_SCORE = 5.0  # Minimum score (0-10) to display in results
+TOP_MATCHES_SIZE = 20  # Number of rows written to data/top_matches.csv
+TOP_MATCHES_PATH = DATA_DIR / "top_matches.csv"
 
 # Load profile content
 def load_profile() -> str:

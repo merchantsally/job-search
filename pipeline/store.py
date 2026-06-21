@@ -190,3 +190,35 @@ class LocalStore:
             out = [j for j in out if j["match_score"] >= min_score]
         out.sort(key=lambda j: j["match_score"], reverse=True)
         return out
+
+    # ------------------------------------------------------------- exports
+    def export_top_matches(self, path: Path, limit: int = 20) -> int:
+        """Write the top `limit` scored jobs (by match_score desc) to a CSV snapshot."""
+        columns = [
+            "rank",
+            "match_score",
+            "title",
+            "company",
+            "location",
+            "url",
+            "match_reasoning",
+        ]
+        top = self.get_scored_jobs()[:limit]
+        tmp = Path(path).with_suffix(".csv.tmp")
+        with open(tmp, "w", newline="", encoding="utf-8") as f:
+            writer = csv.DictWriter(f, fieldnames=columns)
+            writer.writeheader()
+            for rank, job in enumerate(top, 1):
+                writer.writerow(
+                    {
+                        "rank": rank,
+                        "match_score": job.get("match_score"),
+                        "title": job.get("title", ""),
+                        "company": job.get("company", ""),
+                        "location": job.get("location", ""),
+                        "url": job.get("url", ""),
+                        "match_reasoning": job.get("match_reasoning", ""),
+                    }
+                )
+        tmp.replace(path)
+        return len(top)
