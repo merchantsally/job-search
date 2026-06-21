@@ -1,4 +1,8 @@
 """Fetch and extract job description text from a job URL."""
+import re
+import urllib.request
+import urllib.error
+
 from playwright.sync_api import Browser
 
 
@@ -47,8 +51,7 @@ def fetch_description(browser: Browser, url: str) -> dict:
     page = browser.new_page()
     result = {"description": "", "location": ""}
     try:
-        page.goto(url, timeout=30000)
-        page.wait_for_load_state("domcontentloaded", timeout=15000)
+        page.goto(url, timeout=30000, wait_until="domcontentloaded")
         page.wait_for_timeout(1500)  # Wait for dynamic content
 
         # Extract location before removing elements
@@ -80,10 +83,42 @@ def fetch_description(browser: Browser, url: str) -> dict:
         return result
 
     except Exception as e:
-        print(f"    Enricher error for {url}: {e}")
+        first_line = str(e).splitlines()[0]
+        print(f"    Enricher error for {url}: {first_line}")
+        fallback = _fetch_via_http(url)
+        if fallback["description"] or fallback["location"]:
+            print(f"    Recovered via HTTP fallback: {url[:80]}")
+            return fallback
         return result
     finally:
         page.close()
+
+
+def _fetch_via_http(url: str) -> dict:
+    """Plain HTTP fallback for when Playwright errors (e.g. ERR_INVALID_RESPONSE)."""
+    result = {"description": "", "location": ""}
+    req = urllib.request.Request(
+        url,
+        headers={
+            "User-Agent": (
+                "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+                "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+            )
+        },
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=20) as resp:
+            html = resp.read().decode("utf-8", errors="replace")
+    except (urllib.error.URLError, TimeoutError, OSError):
+        return result
+
+    # Strip script/style/svg blocks, then tags
+    html = re.sub(r"<(script|style|svg|noscript)[^>]*>.*?</\1>", " ", html, flags=re.DOTALL | re.IGNORECASE)
+    text = re.sub(r"<[^>]+>", " ", html)
+    text = re.sub(r"\s+", " ", text).strip()
+    if len(text) >= _MIN_LENGTH:
+        result["description"] = _clean(text)
+    return result
 
 
 def _clean(text: str) -> str:

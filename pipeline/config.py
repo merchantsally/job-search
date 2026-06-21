@@ -10,10 +10,7 @@ load_dotenv()
 ROOT_DIR = Path(__file__).parent.parent
 PROFILE_PATH = ROOT_DIR / "profile.md"
 SOURCES_PATH = ROOT_DIR / "job_sources.json"
-
-# Supabase credentials
-SUPABASE_URL = os.getenv("SUPABASE_URL", "")
-SUPABASE_SERVICE_KEY = os.getenv("SUPABASE_SERVICE_KEY", "")
+DATA_DIR = ROOT_DIR / "data"  # Local CSV storage (replaces Supabase)
 
 # OpenAI API
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")

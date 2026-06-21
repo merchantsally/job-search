@@ -1,7 +1,7 @@
-"""View top job matches from Supabase."""
+"""View top job matches from the local CSV store."""
 import argparse
-from supabase import create_client
 from pipeline import config
+from pipeline.store import LocalStore
 
 
 def main():
@@ -11,34 +11,25 @@ def main():
     parser.add_argument("--all", action="store_true", help="Show all scored jobs")
     args = parser.parse_args()
 
-    supabase = create_client(config.SUPABASE_URL, config.SUPABASE_SERVICE_KEY)
+    store = LocalStore(config.DATA_DIR)
 
-    query = supabase.table("jobs").select(
-        "title, company, location, match_score, match_reasoning, url"
-    ).not_.is_("match_score", "null")
-
-    if args.min_score > 0:
-        query = query.gte("match_score", args.min_score)
-
-    query = query.order("match_score", desc=True)
+    jobs = store.get_scored_jobs(min_score=args.min_score)
 
     if not args.all:
-        query = query.limit(args.limit)
-
-    result = query.execute()
+        jobs = jobs[: args.limit]
 
     print(f"\n{'='*60}")
-    print(f"Top {len(result.data)} Job Matches")
+    print(f"Top {len(jobs)} Job Matches")
     print(f"{'='*60}\n")
 
-    for i, job in enumerate(result.data, 1):
+    for i, job in enumerate(jobs, 1):
         score = job["match_score"] or 0
         print(f"{i:2}. [{score:.1f}] {job['title']}")
         print(f"    Company:  {job['company']}")
         print(f"    Location: {job['location']}")
         print(f"    URL:      {job['url']}")
         if job["match_reasoning"]:
-            # Truncate reasoning to 100 chars for readability
+            # Truncate reasoning to 150 chars for readability
             reasoning = job["match_reasoning"][:150]
             if len(job["match_reasoning"]) > 150:
                 reasoning += "..."

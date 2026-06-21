@@ -24,6 +24,9 @@ dist/
 profile.md
 profiles/
 
+# Local CSV data store (scraped jobs)
+data/
+
 # OS
 .DS_Store
 Thumbs.db

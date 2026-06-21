@@ -240,7 +240,8 @@
       "name": "Retool",
       "url": "https://jobs.ashbyhq.com/retool",
       "type": "ashby",
-      "enabled": true
+      "enabled": false,
+      "_note": "Ashby board returns 404 - Retool moved careers to retool.com/careers (custom Next.js site)"
     },
     {
       "name": "Rippling",
@@ -259,7 +260,8 @@
       "name": "Coinbase",
       "url": "https://job-boards.greenhouse.io/coinbase",
       "type": "greenhouse",
-      "enabled": true
+      "enabled": false,
+      "_note": "Greenhouse board returns 404 - Coinbase moved to custom Cloudflare-protected careers site"
     },
     {
       "name": "Airbnb",
