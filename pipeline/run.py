@@ -7,9 +7,9 @@ from datetime import datetime
 from urllib.parse import urlparse, urlunparse
 
 from playwright.sync_api import sync_playwright
-from supabase import create_client
 
 from . import config
+from .store import LocalStore
 from .scrapers import get_scraper
 from .filter import is_relevant
 from .enricher import fetch_description
@@ -79,7 +79,7 @@ def _scrape_source(browser, source: dict, seen_hashes: set) -> list[dict]:
         return []
 
 
-def phase1_scrape(supabase, browser) -> int:
+def phase1_scrape(store, browser) -> int:
     """Phase 1: Scrape all sources for new jobs."""
     print("\n=== Phase 1: Scraping ===")
 
@@ -88,8 +88,7 @@ def phase1_scrape(supabase, browser) -> int:
         return 0
 
     # Get existing URL hashes to skip duplicates
-    result = supabase.table("seen_jobs").select("url_hash").execute()
-    seen_hashes = {row["url_hash"] for row in result.data}
+    seen_hashes = store.get_seen_hashes()
 
     all_new_jobs = []
 
@@ -105,25 +104,10 @@ def phase1_scrape(supabase, browser) -> int:
         for job in new_jobs:
             seen_hashes.add(job.get("url_hash", ""))
 
-    # Insert new jobs into database
+    # Insert new jobs into local store
     if all_new_jobs:
-        # Insert seen_jobs records (deduplicated)
-        seen_hashes_to_insert = set()
-        seen_records = []
-        for j in all_new_jobs:
-            url_hash = j.get("url_hash")
-            if url_hash and url_hash not in seen_hashes_to_insert:
-                seen_hashes_to_insert.add(url_hash)
-                seen_records.append({"url_hash": url_hash})
-
-        if seen_records:
-            # Insert in batches to avoid issues
-            for i in range(0, len(seen_records), 100):
-                batch = seen_records[i:i + 100]
-                try:
-                    supabase.table("seen_jobs").upsert(batch).execute()
-                except Exception as e:
-                    print(f"  Error inserting seen_jobs batch: {e}")
+        # Mark URL hashes as seen (deduplicated)
+        store.add_seen_hashes(j.get("url_hash") for j in all_new_jobs)
 
         # Insert job records (deduplicated by URL without query params)
         seen_urls = set()
@@ -152,76 +136,54 @@ def phase1_scrape(supabase, browser) -> int:
             }
             job_records.append(record)
 
-        # Insert in batches
-        batch_size = 100
-        for i in range(0, len(job_records), batch_size):
-            batch = job_records[i : i + batch_size]
-            try:
-                supabase.table("jobs").upsert(
-                    batch, on_conflict="url"
-                ).execute()
-            except Exception as e:
-                print(f"  Error inserting batch: {e}")
+        store.upsert_jobs(job_records)
+        store.save()
 
     print(f"  Total new jobs: {len(all_new_jobs)}")
     return len(all_new_jobs)
 
 
-def phase2_filter(supabase) -> int:
+def phase2_filter(store) -> int:
     """Phase 2: Filter jobs for relevance."""
     print("\n=== Phase 2: Filtering ===")
 
     # Get unfiltered jobs
-    result = (
-        supabase.table("jobs")
-        .select("id, title, location")
-        .is_("filtered_at", "null")
-        .execute()
-    )
-
-    jobs = result.data
+    jobs = store.get_unfiltered_jobs()
     relevant_count = 0
 
     for job in jobs:
         is_match = is_relevant(job.get("title", ""), job.get("location", ""))
 
-        supabase.table("jobs").update(
+        store.update_job(
+            job["id"],
             {
                 "relevant": is_match,
                 "filtered_at": datetime.utcnow().isoformat(),
-            }
-        ).eq("id", job["id"]).execute()
+            },
+        )
 
         if is_match:
             relevant_count += 1
 
+    store.save()
     print(f"  Processed: {len(jobs)}, Relevant: {relevant_count}")
     return relevant_count
 
 
-def phase3_enrich(supabase, browser) -> int:
+def phase3_enrich(store, browser) -> int:
     """Phase 3: Enrich relevant jobs with full descriptions and locations."""
     print("\n=== Phase 3: Enriching ===")
 
     # Get relevant jobs without descriptions (also fetch location to fill gaps)
-    result = (
-        supabase.table("jobs")
-        .select("id, url, description, location")
-        .eq("relevant", True)
-        .is_("enriched_at", "null")
-        .limit(config.ENRICH_BATCH_SIZE)
-        .execute()
-    )
-
-    jobs = result.data
+    jobs = store.get_jobs_to_enrich(config.ENRICH_BATCH_SIZE)
     enriched_count = 0
 
     for job in jobs:
         # Skip if already has description (from API scraper)
         if job.get("description") and len(job["description"]) >= 200:
-            supabase.table("jobs").update(
-                {"enriched_at": datetime.utcnow().isoformat()}
-            ).eq("id", job["id"]).execute()
+            store.update_job(
+                job["id"], {"enriched_at": datetime.utcnow().isoformat()}
+            )
             enriched_count += 1
             continue
 
@@ -237,17 +199,18 @@ def phase3_enrich(supabase, browser) -> int:
         if not job.get("location") and enrichment.get("location"):
             update_data["location"] = enrichment["location"]
 
-        supabase.table("jobs").update(update_data).eq("id", job["id"]).execute()
+        store.update_job(job["id"], update_data)
 
         if enrichment.get("description"):
             enriched_count += 1
             print(f"    Enriched: {job['url'][:60]}...")
 
+    store.save()
     print(f"  Enriched: {enriched_count}/{len(jobs)}")
     return enriched_count
 
 
-def phase4_score(supabase) -> list[dict]:
+def phase4_score(store) -> list[dict]:
     """Phase 4: Score enriched jobs against user profile."""
     print("\n=== Phase 4: Scoring ===")
 
@@ -257,18 +220,7 @@ def phase4_score(supabase) -> list[dict]:
         return []
 
     # Get enriched jobs without scores
-    result = (
-        supabase.table("jobs")
-        .select("id, title, company, location, description")
-        .eq("relevant", True)
-        .not_.is_("enriched_at", "null")
-        .is_("scored_at", "null")
-        .not_.is_("description", "null")
-        .limit(config.SCORE_BATCH_SIZE)
-        .execute()
-    )
-
-    jobs = result.data
+    jobs = store.get_jobs_to_score(config.SCORE_BATCH_SIZE)
     top_matches = []
 
     for job in jobs:
@@ -280,13 +232,14 @@ def phase4_score(supabase) -> list[dict]:
             profile=profile,
         )
 
-        supabase.table("jobs").update(
+        store.update_job(
+            job["id"],
             {
                 "match_score": score,
                 "match_reasoning": reasoning,
                 "scored_at": datetime.utcnow().isoformat(),
-            }
-        ).eq("id", job["id"]).execute()
+            },
+        )
 
         if score >= config.MIN_MATCH_SCORE:
             top_matches.append(
@@ -300,6 +253,7 @@ def phase4_score(supabase) -> list[dict]:
             )
             print(f"    [{score:.1f}] {job['title']} @ {job['company']}")
 
+    store.save()
     print(f"  Scored: {len(jobs)}, Top matches: {len(top_matches)}")
     return top_matches
 
@@ -312,29 +266,29 @@ def main():
 
     _ping("start")
 
-    # Initialize clients
-    if not config.SUPABASE_URL or not config.SUPABASE_SERVICE_KEY:
-        print("Error: Missing Supabase credentials in .env")
-        _ping("fail")
-        return
-
-    supabase = create_client(config.SUPABASE_URL, config.SUPABASE_SERVICE_KEY)
+    # Initialize local CSV store
+    store = LocalStore(config.DATA_DIR)
 
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
 
         try:
             # Phase 1: Scrape
-            new_jobs = phase1_scrape(supabase, browser)
+            new_jobs = phase1_scrape(store, browser)
 
             # Phase 2: Filter
-            relevant = phase2_filter(supabase)
+            relevant = phase2_filter(store)
 
             # Phase 3: Enrich
-            enriched = phase3_enrich(supabase, browser)
+            enriched = phase3_enrich(store, browser)
 
             # Phase 4: Score
-            top_matches = phase4_score(supabase)
+            top_matches = phase4_score(store)
+
+            # Export top-N matches snapshot
+            exported = store.export_top_matches(
+                config.TOP_MATCHES_PATH, config.TOP_MATCHES_SIZE
+            )
 
             # Summary
             print(f"\n{'='*50}")
@@ -343,6 +297,7 @@ def main():
             print(f"  Relevant jobs: {relevant}")
             print(f"  Jobs enriched: {enriched}")
             print(f"  Top matches: {len(top_matches)}")
+            print(f"  Top {exported} written to: {config.TOP_MATCHES_PATH.name}")
 
             if top_matches:
                 print("\nTop Matches:")

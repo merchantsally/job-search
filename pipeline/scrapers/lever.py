@@ -13,8 +13,11 @@ def scrape(browser: Browser, source: dict) -> list[dict]:
     page = browser.new_page()
 
     try:
-        page.goto(url, timeout=30000)
-        page.wait_for_load_state("networkidle", timeout=15000)
+        page.goto(url, timeout=30000, wait_until="domcontentloaded")
+        try:
+            page.wait_for_selector(".posting, [class*='posting']", timeout=15000)
+        except Exception:
+            pass
 
         # Find all job posting elements
         for el in page.query_selector_all(".posting, [class*='posting']"):

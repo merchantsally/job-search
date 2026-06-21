@@ -10,10 +10,7 @@ load_dotenv()
 ROOT_DIR = Path(__file__).parent.parent
 PROFILE_PATH = ROOT_DIR / "profile.md"
 SOURCES_PATH = ROOT_DIR / "job_sources.json"
-
-# Supabase credentials
-SUPABASE_URL = os.getenv("SUPABASE_URL", "")
-SUPABASE_SERVICE_KEY = os.getenv("SUPABASE_SERVICE_KEY", "")
+DATA_DIR = ROOT_DIR / "data"  # Local CSV storage (replaces Supabase)
 
 # OpenAI API
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
@@ -27,6 +24,8 @@ MAX_SCRAPE_WORKERS = 2  # Parallel browser instances
 ENRICH_BATCH_SIZE = 100
 SCORE_BATCH_SIZE = 100
 MIN_MATCH_SCORE = 5.0  # Minimum score (0-10) to display in results
+TOP_MATCHES_SIZE = 20  # Number of rows written to data/top_matches.csv
+TOP_MATCHES_PATH = DATA_DIR / "top_matches.csv"
 
 # Load profile content
 def load_profile() -> str:
