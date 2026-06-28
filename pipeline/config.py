@@ -27,6 +27,9 @@ MIN_MATCH_SCORE = 5.0  # Minimum score (0-10) to display in results
 TOP_MATCHES_SIZE = 20  # Number of rows written to data/top_matches.csv
 TOP_MATCHES_PATH = DATA_DIR / "top_matches.csv"
 
+# Watchdog: hard-kill the run if it exceeds this many seconds (stuck-process guard)
+MAX_RUNTIME_SECONDS = int(os.getenv("MAX_RUNTIME_SECONDS", str(60 * 60)))  # 1h
+
 # Load profile content
 def load_profile() -> str:
     """Load the user's profile from profile.md"""
