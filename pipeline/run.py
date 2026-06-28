@@ -1,6 +1,9 @@
 """Main orchestrator for the job monitor pipeline."""
 import hashlib
 import json
+import os
+import signal
+import threading
 import urllib.request
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
@@ -27,6 +30,29 @@ def _ping(status: str = "") -> None:
         urllib.request.urlopen(url, timeout=5)
     except Exception:
         pass
+
+
+def _start_watchdog(timeout_seconds: int) -> threading.Timer:
+    """Hard-kill this process if the run runs longer than `timeout_seconds`.
+
+    Guards against a hung browser navigation or stalled network call wedging
+    the run indefinitely. Runs on a daemon timer thread, so it fires even if
+    the main thread is blocked in native code.
+    """
+    def _kill():
+        hours = timeout_seconds / 3600
+        print(
+            f"\nWatchdog: run exceeded {hours:.1f}h limit -- killing stuck process.",
+            flush=True,
+        )
+        _ping("fail")
+        # SIGKILL can't be caught/ignored, so a truly hung process still dies.
+        os.kill(os.getpid(), signal.SIGKILL)
+
+    timer = threading.Timer(timeout_seconds, _kill)
+    timer.daemon = True
+    timer.start()
+    return timer
 
 
 def _strip_query_params(url: str) -> str:
@@ -266,6 +292,12 @@ def main():
 
     _ping("start")
 
+    # Mark when this run started so we can isolate freshly-scored jobs.
+    run_started = datetime.utcnow().isoformat()
+
+    # Guard against a stuck run (e.g. a hung browser navigation).
+    watchdog = _start_watchdog(config.MAX_RUNTIME_SECONDS)
+
     # Initialize local CSV store
     store = LocalStore(config.DATA_DIR)
 
@@ -285,9 +317,9 @@ def main():
             # Phase 4: Score
             top_matches = phase4_score(store)
 
-            # Export top-N matches snapshot
+            # Export top-N matches snapshot (only jobs scored in this run)
             exported = store.export_top_matches(
-                config.TOP_MATCHES_PATH, config.TOP_MATCHES_SIZE
+                config.TOP_MATCHES_PATH, config.TOP_MATCHES_SIZE, since=run_started
             )
 
             # Summary
@@ -314,6 +346,7 @@ def main():
 
         finally:
             browser.close()
+            watchdog.cancel()
 
 
 if __name__ == "__main__":

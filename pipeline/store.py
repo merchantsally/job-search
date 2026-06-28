@@ -192,8 +192,12 @@ class LocalStore:
         return out
 
     # ------------------------------------------------------------- exports
-    def export_top_matches(self, path: Path, limit: int = 20) -> int:
-        """Write the top `limit` scored jobs (by match_score desc) to a CSV snapshot."""
+    def export_top_matches(self, path: Path, limit: int = 20, since: str = None) -> int:
+        """Write the top `limit` scored jobs (by match_score desc) to a CSV snapshot.
+
+        If `since` (an ISO timestamp) is given, only jobs scored at or after that
+        time are included -- i.e. records fresh from the latest run.
+        """
         columns = [
             "rank",
             "match_score",
@@ -203,7 +207,10 @@ class LocalStore:
             "url",
             "match_reasoning",
         ]
-        top = self.get_scored_jobs()[:limit]
+        scored = self.get_scored_jobs()
+        if since is not None:
+            scored = [j for j in scored if j.get("scored_at") and j["scored_at"] >= since]
+        top = scored[:limit]
         tmp = Path(path).with_suffix(".csv.tmp")
         with open(tmp, "w", newline="", encoding="utf-8") as f:
             writer = csv.DictWriter(f, fieldnames=columns)

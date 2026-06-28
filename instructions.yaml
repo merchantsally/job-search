@@ -1,0 +1,2 @@
+# instructions
+run: cd /Users/seeyou/Documents/Codex/job-monitor-pipeline && ./venv/bin/python -m pipeline.run 2>&1
