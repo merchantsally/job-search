@@ -16,6 +16,13 @@ DATA_DIR = ROOT_DIR / "data"  # Local CSV storage (replaces Supabase)
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
 SCORING_MODEL = "gpt-5.4-nano"
 
+# Apify (LinkedIn jobs source)
+APIFY_TOKEN = os.getenv("APIFY_TOKEN", "")
+LINKEDIN_ACTOR = "curious_coder~linkedin-jobs-scraper"  # $1/1k results, descriptions bundled
+# Descriptions are bundled free with this actor and required by the scorer, so
+# default on. Set LINKEDIN_FETCH_DESCRIPTIONS=0 to omit them (jobs won't be scored).
+LINKEDIN_FETCH_DESCRIPTIONS = os.getenv("LINKEDIN_FETCH_DESCRIPTIONS", "1").lower() not in ("0", "false", "no", "")
+
 # Optional monitoring
 HEALTHCHECK_URL = os.getenv("HEALTHCHECK_URL", "")
 
