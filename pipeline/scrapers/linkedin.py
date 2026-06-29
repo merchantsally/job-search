@@ -28,12 +28,15 @@ DEFAULT_KEYWORDS = [
 DEFAULT_LOCATIONS = ["United States", "Remote"]
 
 
-def _search_url(keyword: str, location: str) -> str:
-    """Build a public LinkedIn jobs search URL the actor can consume."""
-    q = urllib.parse.urlencode(
-        {"keywords": keyword, "location": location, "position": 1, "pageNum": 0}
-    )
-    return f"https://www.linkedin.com/jobs/search/?{q}"
+def _search_url(keyword: str, location: str, tpr_seconds: Optional[int] = None) -> str:
+    """Build a public LinkedIn jobs search URL the actor can consume.
+
+    tpr_seconds sets LinkedIn's "date posted" filter (f_TPR); e.g. 604800 = past week.
+    """
+    params = {"keywords": keyword, "location": location, "position": 1, "pageNum": 0}
+    if tpr_seconds:
+        params["f_TPR"] = f"r{tpr_seconds}"
+    return f"https://www.linkedin.com/jobs/search/?{urllib.parse.urlencode(params)}"
 
 
 def _parse_salary(raw: str):
@@ -86,7 +89,9 @@ def scrape(browser: Browser, source: dict) -> list[dict]:
     keywords = source.get("keywords", DEFAULT_KEYWORDS)
     locations = source.get("locations", DEFAULT_LOCATIONS)
     count = max(10, source.get("count", 100))  # actor requires count >= 10
-    urls = [_search_url(k, loc) for k in keywords for loc in locations]
+    tpr = source.get("posted_within_days")
+    tpr = int(tpr) * 86400 if tpr else None  # days -> seconds for LinkedIn f_TPR
+    urls = [_search_url(k, loc, tpr) for k in keywords for loc in locations]
 
     try:
         results = _run_actor(urls, count)
