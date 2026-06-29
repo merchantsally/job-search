@@ -6,7 +6,7 @@ import signal
 import threading
 import urllib.request
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from datetime import datetime
+from datetime import datetime, timedelta
 from urllib.parse import urlparse, urlunparse
 
 from playwright.sync_api import sync_playwright
@@ -323,9 +323,14 @@ def main():
             # Phase 4: Score
             top_matches = phase4_score(store)
 
-            # Export every match scoring >= the threshold (all-time, not just this run)
+            # Export matches scoring >= threshold, scored within the recent window
+            window_start = (
+                datetime.utcnow() - timedelta(hours=config.TOP_MATCHES_WINDOW_HOURS)
+            ).isoformat()
             exported = store.export_top_matches(
-                config.TOP_MATCHES_PATH, min_score=config.TOP_MATCHES_MIN_SCORE
+                config.TOP_MATCHES_PATH,
+                min_score=config.TOP_MATCHES_MIN_SCORE,
+                since=window_start,
             )
 
             # Summary
@@ -335,7 +340,7 @@ def main():
             print(f"  Relevant jobs: {relevant}")
             print(f"  Jobs enriched: {enriched}")
             print(f"  Top matches: {len(top_matches)}")
-            print(f"  Matches >= {config.TOP_MATCHES_MIN_SCORE} written: {exported} -> {config.TOP_MATCHES_PATH.name}")
+            print(f"  Matches >= {config.TOP_MATCHES_MIN_SCORE} (last {config.TOP_MATCHES_WINDOW_HOURS}h): {exported} -> {config.TOP_MATCHES_PATH.name}")
 
             if top_matches:
                 print("\nTop Matches:")

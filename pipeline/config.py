@@ -33,6 +33,7 @@ MAX_SCRAPE_WORKERS = 2  # Parallel browser instances
 ENRICH_FETCH_BATCH_SIZE = 100
 MIN_MATCH_SCORE = 5.0  # Minimum score (0-10) for the printed summary list
 TOP_MATCHES_MIN_SCORE = 6.0  # Write every job scoring >= this to data/top_matches.csv
+TOP_MATCHES_WINDOW_HOURS = 24  # Only include jobs scored within this many hours
 TOP_MATCHES_PATH = DATA_DIR / "top_matches.csv"
 
 # Watchdog: hard-kill the run if it exceeds this many seconds (stuck-process guard)
