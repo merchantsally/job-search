@@ -7,6 +7,7 @@ Two CSV files under ``data/`` mirror the old tables:
 The pipeline keeps everything in memory and persists with ``save()``.
 """
 import csv
+import re
 import sys
 from pathlib import Path
 
@@ -73,6 +74,18 @@ def _encode(field: str, value) -> str:
     return str(value)
 
 
+def _dedup_key(job: dict) -> tuple:
+    """Collapse near-duplicate postings (same role across many city pages).
+
+    LinkedIn reposts one remote role to multiple city URLs, so URL dedup
+    misses them; keying on normalized (company, title) folds them into one.
+    """
+    def norm(s):
+        return re.sub(r"\s+", " ", re.sub(r"[^a-z0-9 ]", " ", (s or "").lower())).strip()
+
+    return (norm(job.get("company")), norm(job.get("title")))
+
+
 class LocalStore:
     """Tiny CSV-backed replacement for the Supabase client."""
 
@@ -130,8 +143,14 @@ class LocalStore:
 
     # ------------------------------------------------------------------ jobs
     def upsert_jobs(self, records: list[dict]) -> None:
-        """Insert new jobs; for an existing URL, update only provided columns."""
+        """Insert new jobs; for an existing URL, update only provided columns.
+
+        Also skips near-duplicate postings (same company+title under a different
+        URL, e.g. one remote role reposted to many city pages) so duplicates are
+        never stored, filtered, or scored.
+        """
         by_url = {j["url"]: j for j in self.jobs if j.get("url")}
+        seen_keys = {_dedup_key(j) for j in self.jobs if all(_dedup_key(j))}
         for record in records:
             url = record.get("url")
             if not url:
@@ -140,15 +159,20 @@ class LocalStore:
             if existing:
                 for key, value in record.items():
                     existing[key] = value
-            else:
-                job = {c: None for c in JOB_COLUMNS}
-                job["id"] = self._next_id
-                self._next_id += 1
-                job["relevant"] = False
-                job["applied"] = False
-                job.update(record)
-                self.jobs.append(job)
-                by_url[url] = job
+                continue
+            key = _dedup_key(record)
+            if all(key) and key in seen_keys:
+                continue  # near-duplicate of an existing posting; drop it
+            job = {c: None for c in JOB_COLUMNS}
+            job["id"] = self._next_id
+            self._next_id += 1
+            job["relevant"] = False
+            job["applied"] = False
+            job.update(record)
+            self.jobs.append(job)
+            by_url[url] = job
+            if all(key):
+                seen_keys.add(key)
 
     def _get_by_id(self, job_id):
         for job in self.jobs:
@@ -210,7 +234,16 @@ class LocalStore:
         scored = self.get_scored_jobs()
         if since is not None:
             scored = [j for j in scored if j.get("scored_at") and j["scored_at"] >= since]
-        top = scored[:limit]
+        # Collapse multi-city repostings of the same role (scored is sorted desc,
+        # so the kept instance is the highest-scoring one).
+        seen, deduped = set(), []
+        for job in scored:
+            key = _dedup_key(job)
+            if key in seen:
+                continue
+            seen.add(key)
+            deduped.append(job)
+        top = deduped[:limit]
         tmp = Path(path).with_suffix(".csv.tmp")
         with open(tmp, "w", newline="", encoding="utf-8") as f:
             writer = csv.DictWriter(f, fieldnames=columns)
