@@ -1,5 +1,7 @@
 """Scrape Greenhouse job boards via the public API (no Playwright needed)."""
+import html
 import json
+import re
 import urllib.request
 from datetime import datetime, timedelta
 from typing import Optional
@@ -39,6 +41,19 @@ def _is_recent(date_str: str) -> bool:
     return parsed >= cutoff
 
 
+def _html_to_text(content: str) -> str:
+    """Convert Greenhouse's HTML `content` field to clean plain text."""
+    if not content:
+        return ""
+    text = html.unescape(content)
+    # Drop script/style blocks, then all tags.
+    text = re.sub(r"<(script|style)[^>]*>.*?</\1>", " ", text, flags=re.DOTALL | re.IGNORECASE)
+    text = re.sub(r"<[^>]+>", " ", text)
+    text = re.sub(r"[ \t]+", " ", text)
+    text = re.sub(r"\n\s*\n\s*", "\n\n", text)
+    return text.strip()[:8000]
+
+
 def scrape(browser: Browser, source: dict) -> list[dict]:
     """
     Calls the Greenhouse Job Board API directly.
@@ -48,11 +63,13 @@ def scrape(browser: Browser, source: dict) -> list[dict]:
     url = source["url"].rstrip("/")
     name = source["name"]
     token = url.split("/")[-1]
-    api_url = f"https://boards-api.greenhouse.io/v1/boards/{token}/jobs"
+    # content=true returns the full job description + departments in one call,
+    # so most Greenhouse jobs never need the (rate-limited) enrichment pass.
+    api_url = f"https://boards-api.greenhouse.io/v1/boards/{token}/jobs?content=true"
 
     try:
         req = urllib.request.Request(api_url, headers={"User-Agent": "Mozilla/5.0"})
-        with urllib.request.urlopen(req, timeout=15) as resp:
+        with urllib.request.urlopen(req, timeout=20) as resp:
             data = json.loads(resp.read().decode("utf-8"))
     except Exception as e:
         print(f"    Greenhouse error ({name}): {e}")
@@ -65,6 +82,10 @@ def scrape(browser: Browser, source: dict) -> list[dict]:
         if first_published and not _is_recent(first_published):
             continue
 
+        departments = ", ".join(
+            d.get("name", "") for d in job.get("departments", []) if d.get("name")
+        )
+
         jobs.append({
             "title": job.get("title", "").strip(),
             "company": name,
@@ -72,6 +93,8 @@ def scrape(browser: Browser, source: dict) -> list[dict]:
             "url": job.get("absolute_url", ""),
             "source": name,
             "date_posted": (first_published or "")[:10] or None,
+            "department": departments,
+            "description": _html_to_text(job.get("content", "")),
         })
 
     print(f"    {name}: {len(jobs)} jobs")
