@@ -323,9 +323,9 @@ def main():
             # Phase 4: Score
             top_matches = phase4_score(store)
 
-            # Export top-N matches snapshot (only jobs scored in this run)
+            # Export every match scoring >= the threshold (all-time, not just this run)
             exported = store.export_top_matches(
-                config.TOP_MATCHES_PATH, config.TOP_MATCHES_SIZE, since=run_started
+                config.TOP_MATCHES_PATH, min_score=config.TOP_MATCHES_MIN_SCORE
             )
 
             # Summary
@@ -335,7 +335,7 @@ def main():
             print(f"  Relevant jobs: {relevant}")
             print(f"  Jobs enriched: {enriched}")
             print(f"  Top matches: {len(top_matches)}")
-            print(f"  Top {exported} written to: {config.TOP_MATCHES_PATH.name}")
+            print(f"  Matches >= {config.TOP_MATCHES_MIN_SCORE} written: {exported} -> {config.TOP_MATCHES_PATH.name}")
 
             if top_matches:
                 print("\nTop Matches:")

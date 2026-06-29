@@ -31,8 +31,8 @@ MAX_SCRAPE_WORKERS = 2  # Parallel browser instances
 # Jobs that already ship with a description (e.g. LinkedIn) are enriched instantly
 # with no cap; this only limits slow Playwright description fetches per run.
 ENRICH_FETCH_BATCH_SIZE = 100
-MIN_MATCH_SCORE = 5.0  # Minimum score (0-10) to display in results
-TOP_MATCHES_SIZE = 20  # Number of rows written to data/top_matches.csv
+MIN_MATCH_SCORE = 5.0  # Minimum score (0-10) for the printed summary list
+TOP_MATCHES_MIN_SCORE = 6.0  # Write every job scoring >= this to data/top_matches.csv
 TOP_MATCHES_PATH = DATA_DIR / "top_matches.csv"
 
 # Watchdog: hard-kill the run if it exceeds this many seconds (stuck-process guard)
