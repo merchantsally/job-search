@@ -16,13 +16,21 @@ DATA_DIR = ROOT_DIR / "data"  # Local CSV storage (replaces Supabase)
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
 SCORING_MODEL = "gpt-5.4-nano"
 
+# Apify (LinkedIn jobs source)
+APIFY_TOKEN = os.getenv("APIFY_TOKEN", "")
+LINKEDIN_ACTOR = "curious_coder~linkedin-jobs-scraper"  # $1/1k results, descriptions bundled
+# Descriptions are bundled free with this actor and required by the scorer, so
+# default on. Set LINKEDIN_FETCH_DESCRIPTIONS=0 to omit them (jobs won't be scored).
+LINKEDIN_FETCH_DESCRIPTIONS = os.getenv("LINKEDIN_FETCH_DESCRIPTIONS", "1").lower() not in ("0", "false", "no", "")
+
 # Optional monitoring
 HEALTHCHECK_URL = os.getenv("HEALTHCHECK_URL", "")
 
 # Pipeline settings
 MAX_SCRAPE_WORKERS = 2  # Parallel browser instances
-ENRICH_BATCH_SIZE = 100
-SCORE_BATCH_SIZE = 100
+# Jobs that already ship with a description (e.g. LinkedIn) are enriched instantly
+# with no cap; this only limits slow Playwright description fetches per run.
+ENRICH_FETCH_BATCH_SIZE = 100
 MIN_MATCH_SCORE = 5.0  # Minimum score (0-10) to display in results
 TOP_MATCHES_SIZE = 20  # Number of rows written to data/top_matches.csv
 TOP_MATCHES_PATH = DATA_DIR / "top_matches.csv"

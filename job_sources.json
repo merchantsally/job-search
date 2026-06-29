@@ -10,6 +10,18 @@
     ]
   },
   "sources": [
+    {"_comment": "=== MARKET-WIDE SEARCH (LinkedIn via Apify) ==="},
+    {
+      "name": "LinkedIn RevOps",
+      "url": "https://www.linkedin.com/jobs",
+      "type": "linkedin",
+      "enabled": true,
+      "keywords": ["revenue operations", "revops", "sales operations", "gtm operations", "business operations", "marketing operations", "revenue strategy"],
+      "locations": ["United States", "Remote", "Canada"],
+      "posted_within_days": 7,
+      "count": 1500
+    },
+
     {"_comment": "=== VC PORTFOLIOS FIRST (to capture smaller companies) ==="},
 
     {"_comment": "=== Consider-Powered VC Job Boards ==="},

@@ -197,23 +197,26 @@ def phase2_filter(store) -> int:
 
 
 def phase3_enrich(store, browser) -> int:
-    """Phase 3: Enrich relevant jobs with full descriptions and locations."""
+    """Phase 3: Enrich relevant jobs with full descriptions and locations.
+
+    Fast path: jobs that already ship with a description (e.g. LinkedIn) are
+    stamped enriched instantly, with no cap. Slow path: jobs missing a
+    description get a Playwright fetch, capped per run to bound runtime.
+    """
     print("\n=== Phase 3: Enriching ===")
 
-    # Get relevant jobs without descriptions (also fetch location to fill gaps)
-    jobs = store.get_jobs_to_enrich(config.ENRICH_BATCH_SIZE)
-    enriched_count = 0
+    pending = store.get_jobs_to_enrich(None)  # all relevant, not-yet-enriched
+    described = [j for j in pending if len(j.get("description") or "") >= 200]
+    need_fetch = [j for j in pending if len(j.get("description") or "") < 200]
 
-    for job in jobs:
-        # Skip if already has description (from API scraper)
-        if job.get("description") and len(job["description"]) >= 200:
-            store.update_job(
-                job["id"], {"enriched_at": datetime.utcnow().isoformat()}
-            )
-            enriched_count += 1
-            continue
+    # Fast path: already have a description -> just mark enriched (no browser).
+    for job in described:
+        store.update_job(job["id"], {"enriched_at": datetime.utcnow().isoformat()})
+    enriched_count = len(described)
 
-        # Fetch description and location from URL
+    # Slow path: fetch a description from the job page, capped per run.
+    fetch_batch = need_fetch[: config.ENRICH_FETCH_BATCH_SIZE]
+    for job in fetch_batch:
         enrichment = fetch_description(browser, job["url"])
 
         update_data = {
@@ -232,7 +235,10 @@ def phase3_enrich(store, browser) -> int:
             print(f"    Enriched: {job['url'][:60]}...")
 
     store.save()
-    print(f"  Enriched: {enriched_count}/{len(jobs)}")
+    print(
+        f"  Enriched: {enriched_count} "
+        f"({len(described)} pre-filled, fetched {len(fetch_batch)} of {len(need_fetch)} needing a fetch)"
+    )
     return enriched_count
 
 
@@ -245,8 +251,8 @@ def phase4_score(store) -> list[dict]:
         print("  Warning: No profile.md found")
         return []
 
-    # Get enriched jobs without scores
-    jobs = store.get_jobs_to_score(config.SCORE_BATCH_SIZE)
+    # Get enriched jobs without scores (score them all)
+    jobs = store.get_jobs_to_score(None)
     top_matches = []
 
     for job in jobs:

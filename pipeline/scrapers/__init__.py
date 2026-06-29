@@ -1,6 +1,6 @@
 """Job board scrapers for different ATS platforms."""
 from . import ashby, greenhouse, lever, career_page, workatastartup
-from . import topstartups, consider, getro, fractionaljobs
+from . import topstartups, consider, getro, fractionaljobs, linkedin
 
 SCRAPERS = {
     "ashby": ashby.scrape,
@@ -13,6 +13,7 @@ SCRAPERS = {
     "consider": consider.scrape,
     "getro": getro.scrape,
     "fractionaljobs": fractionaljobs.scrape,
+    "linkedin": linkedin.scrape,
 }
 
 def get_scraper(source_type: str):
