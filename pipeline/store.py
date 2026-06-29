@@ -143,8 +143,14 @@ class LocalStore:
 
     # ------------------------------------------------------------------ jobs
     def upsert_jobs(self, records: list[dict]) -> None:
-        """Insert new jobs; for an existing URL, update only provided columns."""
+        """Insert new jobs; for an existing URL, update only provided columns.
+
+        Also skips near-duplicate postings (same company+title under a different
+        URL, e.g. one remote role reposted to many city pages) so duplicates are
+        never stored, filtered, or scored.
+        """
         by_url = {j["url"]: j for j in self.jobs if j.get("url")}
+        seen_keys = {_dedup_key(j) for j in self.jobs if all(_dedup_key(j))}
         for record in records:
             url = record.get("url")
             if not url:
@@ -153,15 +159,20 @@ class LocalStore:
             if existing:
                 for key, value in record.items():
                     existing[key] = value
-            else:
-                job = {c: None for c in JOB_COLUMNS}
-                job["id"] = self._next_id
-                self._next_id += 1
-                job["relevant"] = False
-                job["applied"] = False
-                job.update(record)
-                self.jobs.append(job)
-                by_url[url] = job
+                continue
+            key = _dedup_key(record)
+            if all(key) and key in seen_keys:
+                continue  # near-duplicate of an existing posting; drop it
+            job = {c: None for c in JOB_COLUMNS}
+            job["id"] = self._next_id
+            self._next_id += 1
+            job["relevant"] = False
+            job["applied"] = False
+            job.update(record)
+            self.jobs.append(job)
+            by_url[url] = job
+            if all(key):
+                seen_keys.add(key)
 
     def _get_by_id(self, job_id):
         for job in self.jobs:
