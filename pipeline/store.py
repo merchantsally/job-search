@@ -24,9 +24,11 @@ JOB_COLUMNS = [
     "source",
     "date_posted",
     "department",
+    "employment_type",
     "salary_min",
     "salary_max",
     "salary_currency",
+    "estimated_annual_pay",
     "description",
     "relevant",
     "filtered_at",
@@ -216,8 +218,8 @@ class LocalStore:
         return out
 
     # ------------------------------------------------------------- exports
-    def export_top_matches(self, path: Path, limit: int = 20, since: str = None) -> int:
-        """Write the top `limit` scored jobs (by match_score desc) to a CSV snapshot.
+    def export_top_matches(self, path: Path, min_score: float = 0.0, since: str = None) -> int:
+        """Write every job scoring >= `min_score` (by match_score desc) to a CSV snapshot.
 
         If `since` (an ISO timestamp) is given, only jobs scored at or after that
         time are included -- i.e. records fresh from the latest run.
@@ -228,22 +230,23 @@ class LocalStore:
             "title",
             "company",
             "location",
+            "employment_type",
+            "estimated_annual_pay",
             "url",
             "match_reasoning",
         ]
-        scored = self.get_scored_jobs()
+        scored = self.get_scored_jobs(min_score)
         if since is not None:
             scored = [j for j in scored if j.get("scored_at") and j["scored_at"] >= since]
         # Collapse multi-city repostings of the same role (scored is sorted desc,
         # so the kept instance is the highest-scoring one).
-        seen, deduped = set(), []
+        seen, top = set(), []
         for job in scored:
             key = _dedup_key(job)
             if key in seen:
                 continue
             seen.add(key)
-            deduped.append(job)
-        top = deduped[:limit]
+            top.append(job)
         tmp = Path(path).with_suffix(".csv.tmp")
         with open(tmp, "w", newline="", encoding="utf-8") as f:
             writer = csv.DictWriter(f, fieldnames=columns)
@@ -256,6 +259,8 @@ class LocalStore:
                         "title": job.get("title", ""),
                         "company": job.get("company", ""),
                         "location": job.get("location", ""),
+                        "employment_type": job.get("employment_type", "") or "",
+                        "estimated_annual_pay": job.get("estimated_annual_pay", "") or "",
                         "url": job.get("url", ""),
                         "match_reasoning": job.get("match_reasoning", ""),
                     }

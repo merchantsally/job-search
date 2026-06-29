@@ -56,6 +56,52 @@ def _parse_salary(raw: str):
     return lo, (hi if hi != lo else None), currency
 
 
+# Periods -> multiplier to annualize (40h/wk, 52wk; ~260 working days)
+_PERIOD_MULT = [
+    (("/hr", "/hour", "per hour", "hourly", "an hour"), 2080),
+    (("/mo", "/month", "per month", "monthly", "a month"), 12),
+    (("/wk", "/week", "per week", "weekly", "a week"), 52),
+    (("/day", "per day", "daily", "a day"), 260),
+    (("/yr", "/year", "per year", "annually", "annual", "a year"), 1),
+]
+
+
+def _annualize(raw: str) -> str:
+    """Turn a LinkedIn pay string into an estimated annual figure/range.
+
+    Annualizes hourly/monthly/weekly/daily pay; passes annual through. Returns
+    a formatted string (e.g. "$176,800" or "$120,000 - $150,000"), or "" if no
+    usable numbers are present.
+    """
+    if not raw:
+        return ""
+    low = raw.lower()
+    nums = []
+    for num_str, suffix in re.findall(r"(\d[\d,]*(?:\.\d+)?)\s*([kKmM]?)", raw):
+        val = float(num_str.replace(",", ""))
+        if suffix.lower() == "k":
+            val *= 1_000
+        elif suffix.lower() == "m":
+            val *= 1_000_000
+        if val > 0:
+            nums.append(val)
+    if not nums:
+        return ""
+    mult = 1
+    for markers, m in _PERIOD_MULT:
+        if any(mk in low for mk in markers):
+            mult = m
+            break
+    else:
+        # No explicit period: small numbers look like an hourly rate.
+        if max(nums) < 1000:
+            mult = 2080
+    annual = sorted({round(n * mult) for n in nums})
+    cur = "$" if "$" in raw else ""
+    lo, hi = annual[0], annual[-1]
+    return f"{cur}{lo:,}" if lo == hi else f"{cur}{lo:,} - {cur}{hi:,}"
+
+
 def _recent(date_str: Optional[str]) -> bool:
     if not date_str:
         return True  # keep if date unknown
@@ -121,9 +167,11 @@ def scrape(browser: Browser, source: dict) -> list[dict]:
             "source": name,
             "date_posted": date_posted,
             "department": (r.get("jobFunction") or "").strip(),
+            "employment_type": (r.get("employmentType") or "").strip(),
             "salary_min": smin,
             "salary_max": smax,
             "salary_currency": scur,
+            "estimated_annual_pay": _annualize(r.get("salary")),
             "description": desc,
         })
 
