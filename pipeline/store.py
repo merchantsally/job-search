@@ -7,6 +7,7 @@ Two CSV files under ``data/`` mirror the old tables:
 The pipeline keeps everything in memory and persists with ``save()``.
 """
 import csv
+import re
 import sys
 from pathlib import Path
 
@@ -71,6 +72,18 @@ def _encode(field: str, value) -> str:
     if field in BOOL_FIELDS:
         return "true" if value else "false"
     return str(value)
+
+
+def _dedup_key(job: dict) -> tuple:
+    """Collapse near-duplicate postings (same role across many city pages).
+
+    LinkedIn reposts one remote role to multiple city URLs, so URL dedup
+    misses them; keying on normalized (company, title) folds them into one.
+    """
+    def norm(s):
+        return re.sub(r"\s+", " ", re.sub(r"[^a-z0-9 ]", " ", (s or "").lower())).strip()
+
+    return (norm(job.get("company")), norm(job.get("title")))
 
 
 class LocalStore:
@@ -210,7 +223,16 @@ class LocalStore:
         scored = self.get_scored_jobs()
         if since is not None:
             scored = [j for j in scored if j.get("scored_at") and j["scored_at"] >= since]
-        top = scored[:limit]
+        # Collapse multi-city repostings of the same role (scored is sorted desc,
+        # so the kept instance is the highest-scoring one).
+        seen, deduped = set(), []
+        for job in scored:
+            key = _dedup_key(job)
+            if key in seen:
+                continue
+            seen.add(key)
+            deduped.append(job)
+        top = deduped[:limit]
         tmp = Path(path).with_suffix(".csv.tmp")
         with open(tmp, "w", newline="", encoding="utf-8") as f:
             writer = csv.DictWriter(f, fieldnames=columns)
