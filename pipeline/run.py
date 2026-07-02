@@ -155,9 +155,11 @@ def phase1_scrape(store, browser) -> int:
                 "source": j.get("source", ""),
                 "date_posted": j.get("date_posted"),
                 "department": j.get("department", ""),
+                "employment_type": j.get("employment_type", ""),
                 "salary_min": j.get("salary_min"),
                 "salary_max": j.get("salary_max"),
                 "salary_currency": j.get("salary_currency"),
+                "estimated_annual_pay": j.get("estimated_annual_pay", ""),
                 "description": j.get("description", ""),
             }
             job_records.append(record)
