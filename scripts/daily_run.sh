@@ -18,3 +18,6 @@ if [ -f "$PROJECT/data/top_matches.csv" ]; then
      "$DOWNLOADS/job_scrape_top_matches_$(date +%Y-%m-%d).csv"
   echo "$(date '+%Y-%m-%d %H:%M:%S') wrote job_scrape_top_matches_$(date +%Y-%m-%d).csv to Downloads"
 fi
+
+# Log this pipeline's own Apify usage (separate from the shared account's other users).
+./venv/bin/python scripts/track_apify_usage.py >> "$PROJECT/data/scheduler.log" 2>&1
