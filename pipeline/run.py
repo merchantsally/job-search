@@ -256,15 +256,23 @@ def phase4_score(store) -> list[dict]:
     # Get enriched jobs without scores (score them all)
     jobs = store.get_jobs_to_score(None)
     top_matches = []
+    failed = 0
 
     for job in jobs:
-        score, reasoning = score_job(
+        result = score_job(
             title=job.get("title", ""),
             company=job.get("company", ""),
             location=job.get("location", ""),
             description=job.get("description", ""),
             profile=profile,
         )
+
+        # None => scoring failed (e.g. OpenAI quota/API error). Leave the job
+        # unscored so it retries next run instead of locking in a fake 0.
+        if result is None:
+            failed += 1
+            continue
+        score, reasoning = result
 
         store.update_job(
             job["id"],
@@ -288,7 +296,9 @@ def phase4_score(store) -> list[dict]:
             print(f"    [{score:.1f}] {job['title']} @ {job['company']}")
 
     store.save()
-    print(f"  Scored: {len(jobs)}, Top matches: {len(top_matches)}")
+    print(f"  Scored: {len(jobs) - failed}/{len(jobs)}, Top matches: {len(top_matches)}")
+    if failed:
+        print(f"  WARNING: {failed} jobs could not be scored (OpenAI error/quota) - will retry next run")
     return top_matches
 
 

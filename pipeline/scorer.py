@@ -39,11 +39,12 @@ Scoring guidelines:
 - 1-2: Poor match - significant misalignment
 - 0: No match - completely irrelevant
 
-IMPORTANT location scoring adjustments:
-- ADD +1 point for fully remote roles or roles explicitly open to Canada
-- ADD +0.5 points for "remote-first" or "North America remote" roles
-- SUBTRACT -2 points for onsite-only roles or roles requiring specific US city presence
-- SUBTRACT -1 point if Canada is not explicitly mentioned and role seems US-only
+IMPORTANT location scoring (the candidate is remote and based in Canada):
+- ADD +1 for fully remote roles, or roles explicitly open to Canada / North America
+- Remote-first or US-remote roles where Canada is simply NOT mentioned: apply NO penalty. Treat these as workable and worth surfacing. Do NOT treat unstated Canada eligibility as exclusion, and do NOT call it a "location misalignment."
+- SUBTRACT -2 for onsite-only roles, or roles requiring presence in a specific city/country
+- SUBTRACT -3 only if the posting EXPLICITLY excludes Canada-based candidates, or requires US work authorization / states it is US-only for legal/tax reasons
+Only apply a location penalty when the posting gives a concrete reason a remote, Canada-based candidate could not take the role. Ambiguous or unstated location is never a penalty.
 
 Be honest and critical. Only give high scores when there's genuine alignment."""
 
@@ -68,17 +69,19 @@ def score_job(
     location: str,
     description: str,
     profile: str,
-) -> tuple[float, str]:
+):
     """
     Score a job posting against the user's profile.
 
     Returns:
-        Tuple of (score, reasoning) where score is 0-10 and reasoning is a sentence.
-        Returns (0.0, "") if any error occurs.
+        Tuple of (score, reasoning) where score is 0-10 and reasoning is a sentence,
+        or None if scoring could not be completed (missing key, API/quota error,
+        bad response). None signals "retry later" -- the caller should NOT mark the
+        job scored, so a transient outage can't lock in a fake 0.
     """
     if not config.OPENAI_API_KEY:
         print("    Warning: No OpenAI API key configured")
-        return (0.0, "")
+        return None
 
     try:
         client = OpenAI(api_key=config.OPENAI_API_KEY)
@@ -118,7 +121,7 @@ def score_job(
 
     except json.JSONDecodeError as e:
         print(f"    Scorer JSON error: {e}")
-        return (0.0, "")
+        return None
     except Exception as e:
         print(f"    Scorer error: {e}")
-        return (0.0, "")
+        return None
