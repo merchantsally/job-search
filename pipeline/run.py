@@ -1,5 +1,6 @@
 """Main orchestrator for the job monitor pipeline."""
 import hashlib
+import time
 import json
 import os
 import signal
@@ -258,7 +259,9 @@ def phase4_score(store) -> list[dict]:
     top_matches = []
     failed = 0
 
-    for job in jobs:
+    for i, job in enumerate(jobs):
+        if i:
+            time.sleep(config.SCORE_CALL_DELAY)  # pace calls to stay under OpenAI rate limits
         result = score_job(
             title=job.get("title", ""),
             company=job.get("company", ""),

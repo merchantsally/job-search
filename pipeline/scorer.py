@@ -1,6 +1,7 @@
 """Score job listings against user profile using OpenAI."""
 import json
 import re
+import time
 from openai import OpenAI
 from . import config
 
@@ -84,7 +85,9 @@ def score_job(
         return None
 
     try:
-        client = OpenAI(api_key=config.OPENAI_API_KEY)
+        # max_retries lets the SDK back off on rate limits (429), so large
+        # scoring bursts don't mass-fail transiently.
+        client = OpenAI(api_key=config.OPENAI_API_KEY, max_retries=6)
 
         # Prepare the prompt
         user_content = USER_TEMPLATE.format(
@@ -95,18 +98,27 @@ def score_job(
             description=_sanitize(description[:6000]),
         )
 
-        # Call OpenAI
-        response = client.chat.completions.create(
-            model=config.SCORING_MODEL,
-            max_completion_tokens=800,
-            messages=[
-                {"role": "system", "content": SYSTEM_PROMPT},
-                {"role": "user", "content": user_content},
-            ],
-        )
-
-        # Parse the response
-        text = response.choices[0].message.content.strip()
+        # Call OpenAI. Under bursty load the API occasionally returns an empty
+        # response (no choices / null content); retry a few times before giving up.
+        text = ""
+        for attempt in range(4):
+            response = client.chat.completions.create(
+                model=config.SCORING_MODEL,
+                max_completion_tokens=800,
+                messages=[
+                    {"role": "system", "content": SYSTEM_PROMPT},
+                    {"role": "user", "content": user_content},
+                ],
+            )
+            choices = response.choices or []
+            content = choices[0].message.content if choices else None
+            if content and content.strip():
+                text = content.strip()
+                break
+            time.sleep(1.5 * (attempt + 1))
+        if not text:
+            print("    Scorer error: empty response after retries")
+            return None
 
         # Strip markdown code fences if present
         if text.startswith("```"):
