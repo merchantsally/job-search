@@ -69,6 +69,9 @@ INCLUDE_KEYWORDS = [
     "strategic",
     "gtm",
     "go-to-market",
+    "ai architect",
+    "gtm architect",
+    "ai transformation",
 ]
 
 # Title keywords to EXCLUDE (case-insensitive)
