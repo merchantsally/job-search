@@ -98,7 +98,7 @@ def score_job(
         # Call OpenAI
         response = client.chat.completions.create(
             model=config.SCORING_MODEL,
-            max_completion_tokens=200,
+            max_completion_tokens=800,
             messages=[
                 {"role": "system", "content": SYSTEM_PROMPT},
                 {"role": "user", "content": user_content},
