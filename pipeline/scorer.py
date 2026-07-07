@@ -85,39 +85,42 @@ def score_job(
         return None
 
     try:
-        # max_retries lets the SDK back off on rate limits (429), so large
-        # scoring bursts don't mass-fail transiently.
-        client = OpenAI(api_key=config.OPENAI_API_KEY, max_retries=6)
+        # Disable the SDK's built-in retry: its retry path can raise on 429s
+        # ("'NoneType' object is not subscriptable"). We retry ourselves below.
+        client = OpenAI(api_key=config.OPENAI_API_KEY, max_retries=0)
 
-        # Prepare the prompt
+        # Prepare the prompt (coerce None -> "" so a null field can't crash us)
         user_content = USER_TEMPLATE.format(
-            profile=_sanitize(profile[:3000]),
-            title=_sanitize(title[:200]),
-            company=_sanitize(company[:100]),
-            location=_sanitize(location[:100]),
-            description=_sanitize(description[:6000]),
+            profile=_sanitize((profile or "")[:3000]),
+            title=_sanitize((title or "")[:200]),
+            company=_sanitize((company or "")[:100]),
+            location=_sanitize((location or "")[:100]),
+            description=_sanitize((description or "")[:6000]),
         )
 
-        # Call OpenAI. Under bursty load the API occasionally returns an empty
-        # response (no choices / null content); retry a few times before giving up.
+        # Call OpenAI, retrying on rate limits / transient errors / empty bodies.
         text = ""
-        for attempt in range(4):
-            response = client.chat.completions.create(
-                model=config.SCORING_MODEL,
-                max_completion_tokens=800,
-                messages=[
-                    {"role": "system", "content": SYSTEM_PROMPT},
-                    {"role": "user", "content": user_content},
-                ],
-            )
-            choices = response.choices or []
-            content = choices[0].message.content if choices else None
-            if content and content.strip():
-                text = content.strip()
-                break
-            time.sleep(1.5 * (attempt + 1))
+        for attempt in range(5):
+            try:
+                response = client.chat.completions.create(
+                    model=config.SCORING_MODEL,
+                    max_completion_tokens=800,
+                    messages=[
+                        {"role": "system", "content": SYSTEM_PROMPT},
+                        {"role": "user", "content": user_content},
+                    ],
+                )
+                choices = response.choices or []
+                content = choices[0].message.content if choices else None
+                if content and content.strip():
+                    text = content.strip()
+                    break
+            except Exception as e:
+                if attempt == 4:
+                    print(f"    Scorer error (final): {str(e)[:80]}")
+            time.sleep(2 * (attempt + 1))
         if not text:
-            print("    Scorer error: empty response after retries")
+            print("    Scorer error: no content after retries")
             return None
 
         # Strip markdown code fences if present
