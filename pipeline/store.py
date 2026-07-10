@@ -234,6 +234,7 @@ class LocalStore:
             "estimated_annual_pay",
             "url",
             "match_reasoning",
+            "description",
         ]
         scored = self.get_scored_jobs(min_score)
         if since is not None:
@@ -263,6 +264,7 @@ class LocalStore:
                         "estimated_annual_pay": job.get("estimated_annual_pay", "") or "",
                         "url": job.get("url", ""),
                         "match_reasoning": job.get("match_reasoning", ""),
+                        "description": job.get("description", "") or "",
                     }
                 )
         tmp.replace(path)
