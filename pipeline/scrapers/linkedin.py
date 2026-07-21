@@ -6,6 +6,7 @@ how we reach companies that aren't on our curated board list.
 """
 import json
 import re
+import time
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -118,11 +119,25 @@ def _run_actor(urls: list[str], count: int) -> list[dict]:
         f"https://api.apify.com/v2/acts/{config.LINKEDIN_ACTOR}"
         f"/run-sync-get-dataset-items?token={config.APIFY_TOKEN}"
     )
-    req = urllib.request.Request(
-        api, data=json.dumps(payload).encode(), headers={"Content-Type": "application/json"}
-    )
-    with urllib.request.urlopen(req, timeout=300) as resp:
-        return json.loads(resp.read().decode())
+    body = json.dumps(payload).encode()
+    # A rejected 403 (shared-account usage cap) isn't billed, so it's safe to
+    # wait and retry -- the cap often frees up. Timeouts, by contrast, mean the
+    # run already started (and billed), so we use a generous read timeout to
+    # avoid them rather than re-running.
+    for attempt in range(3):
+        req = urllib.request.Request(
+            api, data=body, headers={"Content-Type": "application/json"}
+        )
+        try:
+            with urllib.request.urlopen(req, timeout=600) as resp:
+                return json.loads(resp.read().decode())
+        except urllib.error.HTTPError as e:
+            if e.code in (403, 429, 500, 502, 503, 504) and attempt < 2:
+                print(f"    (Apify {e.code}, retrying in {30 * (attempt + 1)}s...)")
+                time.sleep(30 * (attempt + 1))
+                continue
+            raise
+    return []
 
 
 def scrape(browser: Browser, source: dict) -> list[dict]:
