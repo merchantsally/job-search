@@ -113,31 +113,56 @@ def _recent(date_str: Optional[str]) -> bool:
     return d >= datetime.now() - timedelta(days=MAX_JOB_AGE_DAYS)
 
 
+def _api_get(url: str):
+    with urllib.request.urlopen(urllib.request.Request(url), timeout=60) as resp:
+        return json.loads(resp.read().decode())
+
+
 def _run_actor(urls: list[str], count: int) -> list[dict]:
-    payload = {"urls": urls, "count": count, "scrapeCompany": False}
-    api = (
-        f"https://api.apify.com/v2/acts/{config.LINKEDIN_ACTOR}"
-        f"/run-sync-get-dataset-items?token={config.APIFY_TOKEN}"
-    )
-    body = json.dumps(payload).encode()
-    # A rejected 403 (shared-account usage cap) isn't billed, so it's safe to
-    # wait and retry -- the cap often frees up. Timeouts, by contrast, mean the
-    # run already started (and billed), so we use a generous read timeout to
-    # avoid them rather than re-running.
+    """Run the actor asynchronously and poll for results.
+
+    The synchronous run-sync endpoint caps at ~300s and returns 408 when a big
+    scrape (many keyword x location searches) exceeds it. The async pattern
+    (start -> poll -> fetch dataset) has no such limit.
+    """
+    token = config.APIFY_TOKEN
+    body = json.dumps({"urls": urls, "count": count, "scrapeCompany": False}).encode()
+    start_url = f"https://api.apify.com/v2/acts/{config.LINKEDIN_ACTOR}/runs?token={token}"
+
+    # Start the run, retrying transient failures (403 usage cap isn't billed).
+    run = None
     for attempt in range(3):
         req = urllib.request.Request(
-            api, data=body, headers={"Content-Type": "application/json"}
+            start_url, data=body, headers={"Content-Type": "application/json"}
         )
         try:
-            with urllib.request.urlopen(req, timeout=600) as resp:
-                return json.loads(resp.read().decode())
+            with urllib.request.urlopen(req, timeout=60) as resp:
+                run = json.loads(resp.read().decode())["data"]
+            break
         except urllib.error.HTTPError as e:
             if e.code in (403, 429, 500, 502, 503, 504) and attempt < 2:
-                print(f"    (Apify {e.code}, retrying in {30 * (attempt + 1)}s...)")
+                print(f"    (Apify {e.code} on start, retrying in {30 * (attempt + 1)}s...)")
                 time.sleep(30 * (attempt + 1))
                 continue
             raise
-    return []
+    if not run:
+        return []
+
+    run_id, dataset_id = run["id"], run.get("defaultDatasetId")
+    # Poll until the run reaches a terminal state (cap ~15 min).
+    for _ in range(90):
+        time.sleep(10)
+        status = _api_get(f"https://api.apify.com/v2/actor-runs/{run_id}?token={token}")["data"]["status"]
+        if status in ("SUCCEEDED", "FAILED", "ABORTED", "TIMED-OUT", "TIMING-OUT"):
+            break
+    if status != "SUCCEEDED":
+        print(f"    (Apify run ended: {status})")
+        return []
+
+    items = _api_get(
+        f"https://api.apify.com/v2/datasets/{dataset_id}/items?token={token}&clean=true&format=json"
+    )
+    return items if isinstance(items, list) else []
 
 
 def scrape(browser: Browser, source: dict) -> list[dict]:
