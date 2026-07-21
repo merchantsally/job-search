@@ -34,7 +34,7 @@ ENRICH_FETCH_BATCH_SIZE = 100
 MIN_MATCH_SCORE = 5.0  # Minimum score (0-10) for the printed summary list
 SCORE_CALL_DELAY = 0.0  # optional pacing between scoring calls (0 = off)
 TOP_MATCHES_MIN_SCORE = 6.0  # Write every job scoring >= this to data/top_matches.csv
-TOP_MATCHES_WINDOW_HOURS = 168  # Only include jobs scored within this many hours (7 days)
+TOP_MATCHES_WINDOW_HOURS = 24  # Only include jobs scored within this many hours
 TOP_MATCHES_PATH = DATA_DIR / "top_matches.csv"
 
 # Watchdog: hard-kill the run if it exceeds this many seconds (stuck-process guard)
