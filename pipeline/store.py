@@ -9,6 +9,7 @@ The pipeline keeps everything in memory and persists with ``save()``.
 import csv
 import re
 import sys
+from datetime import datetime
 from pathlib import Path
 
 # Job descriptions can be large; lift the CSV field size cap.
@@ -36,6 +37,7 @@ JOB_COLUMNS = [
     "match_score",
     "match_reasoning",
     "scored_at",
+    "surfaced_at",
     "applied",
     "applied_at",
     "created_at",
@@ -268,4 +270,53 @@ class LocalStore:
                     }
                 )
         tmp.replace(path)
+        return len(top)
+
+    def export_new_matches(self, path: Path, min_score: float = 0.0) -> int:
+        """Write scored jobs >= min_score that have NOT been surfaced before, then
+        mark them surfaced so they never appear in a future daily file.
+
+        Guarantees each match shows up in exactly one daily file (true net-new),
+        regardless of run timing -- unlike the scored_at time-window filter, which
+        can double-count at the boundary when a run drifts.
+        """
+        columns = [
+            "rank", "match_score", "title", "company", "location",
+            "employment_type", "estimated_annual_pay", "url",
+            "match_reasoning", "description",
+        ]
+        seen, top = set(), []
+        for job in self.get_scored_jobs(min_score):
+            if job.get("surfaced_at"):
+                continue
+            key = _dedup_key(job)
+            if key in seen:
+                continue
+            seen.add(key)
+            top.append(job)
+
+        tmp = Path(path).with_suffix(".csv.tmp")
+        with open(tmp, "w", newline="", encoding="utf-8") as f:
+            writer = csv.DictWriter(f, fieldnames=columns)
+            writer.writeheader()
+            for rank, job in enumerate(top, 1):
+                writer.writerow({
+                    "rank": rank,
+                    "match_score": job.get("match_score"),
+                    "title": job.get("title", ""),
+                    "company": job.get("company", ""),
+                    "location": job.get("location", ""),
+                    "employment_type": job.get("employment_type", "") or "",
+                    "estimated_annual_pay": job.get("estimated_annual_pay", "") or "",
+                    "url": job.get("url", ""),
+                    "match_reasoning": job.get("match_reasoning", ""),
+                    "description": job.get("description", "") or "",
+                })
+        tmp.replace(path)
+
+        # Mark surfaced only after the file is safely written.
+        now = datetime.utcnow().isoformat()
+        for job in top:
+            job["surfaced_at"] = now
+        self.save()
         return len(top)
