@@ -285,10 +285,9 @@ class LocalStore:
             "employment_type", "estimated_annual_pay", "url",
             "match_reasoning", "description",
         ]
+        candidates = [j for j in self.get_scored_jobs(min_score) if not j.get("surfaced_at")]
         seen, top = set(), []
-        for job in self.get_scored_jobs(min_score):
-            if job.get("surfaced_at"):
-                continue
+        for job in candidates:
             key = _dedup_key(job)
             if key in seen:
                 continue
@@ -314,9 +313,11 @@ class LocalStore:
                 })
         tmp.replace(path)
 
-        # Mark surfaced only after the file is safely written.
+        # Mark surfaced only after the file is safely written. Mark ALL candidates
+        # (including duplicates collapsed out of `top`) so a reposted twin can't
+        # reappear in a later file.
         now = datetime.utcnow().isoformat()
-        for job in top:
+        for job in candidates:
             job["surfaced_at"] = now
         self.save()
         return len(top)
